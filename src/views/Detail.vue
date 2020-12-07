@@ -69,7 +69,7 @@
         <a-button type="primary" icon="form" @click="modifyApply">
           修改
         </a-button>
-        <a-popconfirm title="确定删除这条采购申请单?" ok-text="确定" cancel-text="取消" @confirm="() => deleteOrder()">
+        <a-popconfirm  v-if="!orderData.audit" title="确定删除这条采购申请单?" ok-text="确定" cancel-text="取消" @confirm="() => deleteOrder()">
           <a-button type="danger"  icon="delete" style="margin-left: 15px;" :loading="deleteLoading" :disabled="deleteDisable"> 
             删除
           </a-button>
@@ -77,7 +77,7 @@
        
       </div>
       <!--生成金蝶采购订单-->
-      <a-button type="primary" class="jindieBtn" icon="check-circle" @click="jindieFun" v-if="status==3 && isChecker">
+      <a-button type="primary" class="jindieBtn" icon="check-circle"  :loading="jdLoad" :disabled="jdDisable" @click="jindieFun" v-if="status==3 && isChecker">
         生成金蝶采购订单
       </a-button>
 
@@ -107,23 +107,30 @@
                 <p><span>总金额：</span>{{orderData.fee}}</p>
               </div>
             </div>
-
-    
-            
-            
-
               
           </a-card>
           
-         <a-card title="审核进度条" class="time-line" v-if="status >= 2">
+          <a-card title="审核进度条" class="time-line" v-if="status >= 2">
             <a-timeline>
               <a-timeline-item v-for="(item, i) in orderData.audit.auditSteps" :key="i" :color="orderData.audit.currentStep >item.step? 'green' : 'gray'" >
                 <a-icon slot="dot" type="check-circle-o" style="font-size: 16px;" v-if="orderData.audit.currentStep > item.step" />
                 <a-icon slot="dot" type="double-right-o" style="font-size: 16px; color: orange" v-if="orderData.audit.currentStep == item.step" />
-                <span v-if="orderData.audit.currentStep > item.step">{{item.time}}</span> {{item.createdByUsername}}  {{item.name}} 
+                <div>{{item.time}} {{item.username}} {{item.user}} {{item.name}} {{item.result}} </div>
+                <div v-if="item.reason!= ''">理由：{{item.reason}}</div>
               </a-timeline-item>
             </a-timeline>
           </a-card>
+
+          <!--被驳回的情况-->
+          <a-card title="申请单日志" class="time-line" v-if="status == 0 && orderData.audit">
+            <a-timeline>
+              <a-timeline-item v-for="(item, i) in orderData.audit.auditSteps" :key="i"  >
+                <div>{{item.time}} {{item.username}} {{item.user}} {{item.name}} {{item.result}} </div>
+                <div v-if="item.reason!= ''">理由：{{item.reason}}</div>
+              </a-timeline-item>
+            </a-timeline>
+          </a-card>
+
         </div>
       </div>
 
@@ -426,6 +433,8 @@ export default {
       sbtDisable: false,
       deleteDisable: false,
       deleteLoading: false,
+      jdLoad: false,
+      jdDisable: false,
       auditList: [], // 审核列表
     }
   },
@@ -559,8 +568,19 @@ export default {
     onJumpSubmit() { // 跳过此步审核 todo
 
     },
-    jindieFun() { // 生成金蝶采购订单 todo
-
+    jindieFun() { // 生成金蝶采购订单
+      this.jdDisable = true;
+      this.jdLoad = true;
+      let url = Api.sbtK3.replace(/%s/, this.id);
+      Http.AJAXGET(this, url, "get", (res)=>{
+        this.$message.success(res.message);
+        setTimeout(()=>{
+          this.$router.push({path: "/mine"})
+        }, 1500)
+      },()=>{
+        this.jdDisable = false;
+        this.jdLoad = false;
+      }) 
     },
     tableClick(record, index){ // 表格双击事件
       return {
@@ -671,6 +691,7 @@ export default {
         list[i].time = "";
         list[i].result = "";
         list[i].reason = "";
+        list[i].user = list[i].user.name;
         if (list[i].name == "新建") {
           list[i].time = this.orderData.appliedTime.substring(0,10);
         } 
@@ -680,7 +701,7 @@ export default {
         } 
         if (list[i].logs.length > 0) {
           list[i].time = list[i].logs[list[i].logs.length -1].createdTime.substring(0,10);
-          list[i].result = list[i].actions == 7 ? "驳回" : "通过";
+          list[i].result = list[i].logs[list[i].logs.length -1].action === 7 ? "驳回" : "通过";
           list[i].reason = list[i].logs[list[i].logs.length -1].content;
         } 
       }

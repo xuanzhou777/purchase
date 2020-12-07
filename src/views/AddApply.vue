@@ -81,6 +81,7 @@
         <!--物料/仪器表格-->
         <a-table v-if="categoryName!=3" bordered :columns="columns"  :data-source="material"  :pagination ="false" class="table" 
           :rowKey="(record,index) => index"
+          :customRow="tableClick"
           :scroll="{ x: 2000, y: 300 }">
             <template slot="action" slot-scope="text, record, index">
               <a href="javascript:;" @click="() => modifyMa(index)">修改</a>
@@ -96,6 +97,7 @@
         <!--服务表格-->
         <a-table v-else bordered :columns="serviceColumns"  :data-source="material" :pagination ="false" class="table" 
           :rowKey="(record,index) => index"
+          :customRow="tableClick"
           :scroll="{ x: 1920}">
             <template slot="action" slot-scope="text, record, index">
               <a href="javascript:;" @click="() => modifyMa(index)">修改</a>
@@ -432,6 +434,16 @@ export default {
       },0)
      
 
+    },
+    tableClick(record, index){ // 表格双击事件
+      return {
+        on: {
+            dblclick: () => {
+              console.log(123)
+             this.modifyMa(index)
+            }
+        }
+      }
     },
     MaCallBack(data) { // 修改物料数据返回
       console.log(data);

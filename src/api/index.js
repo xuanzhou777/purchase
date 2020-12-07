@@ -22,5 +22,5 @@ module.exports = {
   deleteService: `${API_SERVER}/api/v1/services/%s`, // 删除服务
   agreeOrder:  `${API_SERVER}/api/v1/orders/%s/audits/forwards`, // 审核同意采购申请
   refuseOrder: `${API_SERVER}/api/v1/orders/%s/audits/backwards`, // 驳回同意采购申请
-  
+  sbtK3: `${API_SERVER}/api/v1/orders/%s/submissions`, // 提交至金蝶系统
 }
