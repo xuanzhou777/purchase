@@ -373,10 +373,10 @@ export default {
           customRender: (text, record) => record.appliedBy.name
         },
         {
-          title: '申请人部门',
+          title: '申请部门',
           dataIndex: 'department',
           width: 150,
-          customRender: (text, record) => record.appliedBy.teams[0].name
+          customRender: (text, record) => record.reviewTeam.name
         },
         {
           title: '金额',

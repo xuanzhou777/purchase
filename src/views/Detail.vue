@@ -98,7 +98,7 @@
               </div>
               <div class="line">
                 <p class="two"><span>申请人：</span>{{orderData.appliedBy.name}} {{orderData.appliedByUsername}}</p>
-                <p class="two"><span>申请人部门：</span>{{orderData.appliedBy.teams[0].name}}</p>
+                <p class="two"><span>申请部门：</span>{{orderData.reviewTeam.name}}</p>
               </div>
               <div class="line">
                 <p><span >备注：</span>{{orderData.remark}}</p>

@@ -26,7 +26,27 @@
       <div class="item">申请日期：{{dateNow}}</div>
       <div class="item">申请人编号： {{user.username}}</div>
       <div class="item">申请人名称： {{user.name}}</div>
-      <div class="item">申请人部门： {{user.teams[0].name}}</div>
+      
+    </div>
+    <!--申请部门-->
+    <div class="term-box">
+      申请部门： 
+      <div v-if="!showChangeTeam" class="term-txt" >{{team.name}}  <a href="javascript:;" @click="showTeam()" class="link">切换部门</a></div>
+      <div class="term-select" v-else>
+        <a-select v-model="selectTeamId"
+            style="width: 250px"
+            placeholder="请选部门"
+          >
+            <a-select-option  v-for="item in teamList" :key="item.id" :value="item.id">{{item.name}}</a-select-option>
+        </a-select>
+        <a-button type="primary" class="term-btn" @click="saveChangeTeam">
+          确定
+        </a-button>
+        <a-button type="defalut" @click="cancelTeam()">
+          取消
+        </a-button>
+      </div>
+
     </div>
     <!--选择业务类型 决定渲染哪个表单-->
       <div class="select-box">
@@ -194,6 +214,22 @@
   padding-top: 15px;
   border-top: 1px dashed #ccc;
 }
+.term-box{
+  margin-left: 125px;
+  display: flex;
+  align-items: center;
+}
+.term-txt .link{
+  margin-left: 10px;
+}
+.term-box .term-select{
+  display: flex;
+}
+.term-box .term-btn{
+  margin-left: 20px;
+  margin-right: 10px;
+}
+
 
 </style>
 
@@ -395,6 +431,13 @@ export default {
       saveDisable: false,
       sbtLoad: false,
       sbtDisable: false,
+      teamList: [], // 部门列表
+      team: {
+        id: "",
+        name: ""
+      }, // 部门信息
+      showChangeTeam: false,
+      selectTeamId: null,
      
       
     }
@@ -404,6 +447,11 @@ export default {
       this.$router.push({ name: "login"});
     } else {
       this.user = JSON.parse(sessionStorage.getItem("userInfo"));
+      this.team = {
+        id: this.user.teams[0].id,
+        name: this.user.teams[0].name
+      }
+      this.selectTeamId = this.user.teams[0].id;
       this.dateNow = this.getNowFormatDate();
     }
   },
@@ -495,6 +543,7 @@ export default {
       data =this.form1;
       data.categoryNum = this.categoryName;
       data.appliedByUsername = this.user.username;
+      data.reviewTeamId = this.team.id;
       if(this.material.length == 0) {
         this.$message.error("物料或服务信息不能为空,请添加后保存!");
         return false;
@@ -584,6 +633,31 @@ export default {
     changeCate() { // 改变类型
       this.material = [];
     },
+    showTeam() {
+      this.showChangeTeam = true;
+      if(this.teamList.length == 0) {
+        this.getTeamList(); // 获取部门表列表
+      }
+    },
+    cancelTeam() {
+      this.showChangeTeam = false;
+    },
+    changeTeam(e) { // 切换部门
+      console.log(e)
+    },
+    saveChangeTeam() { //保存切换的部门
+      this.team = this.teamList.find(v => v.id === this.selectTeamId);
+      this.showChangeTeam = false;
+    },
+    getTeamList() { // 获取所有部门
+       let url = `${Api.getTeams}?page=1&limit=100`;
+      Http.AJAXGET(this, url, "get", (res)=>{
+        this.teamList = res.data;
+      })
+    },
+
+
+
 
 
     
