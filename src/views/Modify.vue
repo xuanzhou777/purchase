@@ -357,6 +357,11 @@ const serviceColumns = [
     dataIndex: 'projectAddress',
     width: 200,
   },
+   {
+    title: '预算金额',
+    dataIndex: 'fee',
+    width: 200,
+  },
   {
     title: '计划完成日期',
     dataIndex: 'dueDate',
@@ -545,8 +550,12 @@ export default {
           url = Api.deleteMaterials.replace(/%s/, this.material[idx].id);
         }
         Http.AJAXGET(this, url, "delete", (res)=>{
-          this.material.splice(idx,1);
-          this.$message.success("删除成功");
+          if(res.message == '') {
+            this.$message.error("此条信息已有修改记录，无法被删除！");
+          } else {
+            this.material.splice(idx,1);
+            this.$message.success("删除成功");
+          }
         }) 
       }
       

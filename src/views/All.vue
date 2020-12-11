@@ -303,6 +303,11 @@ const serviceColumns = [
     width: 200,
   },
   {
+    title: '预算金额',
+    dataIndex: 'fee',
+    width: 200,
+  },
+  {
     title: '计划完成日期',
     dataIndex: 'dueDate',
     width: 150,
