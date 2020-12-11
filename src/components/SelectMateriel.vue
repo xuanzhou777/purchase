@@ -55,7 +55,7 @@
         :pagination ="false"
       />
       <!--分页-->
-      <a-pagination class="pagination" v-model="page" :total="total" show-less-items  :show-total="total => `共 ${total} 条数据`"/>
+      <a-pagination class="pagination" v-model="page" @change="changePage" :total="total" show-less-items  :show-total="total => `共 ${total} 条数据`"/>
       
     </div>
     
@@ -204,8 +204,8 @@ export default {
       }
      
     },
-    handleSearch (e) { // 搜索信息
-      e.preventDefault();
+    handleSearch () { // 搜索信息
+      // e.preventDefault();
       this.form.validateFields((error, values) => {
         console.log('error', error);
         console.log('Received values of form: ', values);
@@ -236,6 +236,10 @@ export default {
       // this.selected = this.data[selectedRowKeys[0]];
       // console.log(this.selected)
     },
+    changePage(page) {
+      this.handleSearch();
+    }
+
    
     
   }
