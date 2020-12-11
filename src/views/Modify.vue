@@ -475,7 +475,7 @@ export default {
           this.form1 = Object.assign( {}, this.form1, {
             remark:res.remark,
           })
-          this.categoryNamecategoryName = res.categoryNum;
+          this.categoryName = res.categoryNum;
           this.dateNow = res.createdTime.substring(0, 10);
           this.team.id = res.reviewTeam.id;
           this.team.name = res.reviewTeam.name;
@@ -511,6 +511,7 @@ export default {
       this.modfyIdx = idx;
       this.maData = this.material[idx];
       this.isNew = false;
+      console.log(this.material[idx])
       setTimeout(()=>{
         this.$refs.addForm.showDrawer();
       },0)

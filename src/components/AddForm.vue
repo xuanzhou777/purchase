@@ -474,13 +474,15 @@ export default {
       } else {
         if(this.cate ==1) {
           this.formTit = "修改物料";
+          this.form = this.initData;
         } else if(this.cate == 2){
-          this.formTit = "修改仪器信息"
+          this.formTit = "修改仪器信息";
+          this.form = this.initData;
         } else {
-          this.formTit = "修改服务信息"
+          this.formTit = "修改服务信息";
+          this.serviceForm = this.initData;
         }
-        this.form = this.initData;
-        console.log(this.form)
+        
       }
 
       this.visible = true;
