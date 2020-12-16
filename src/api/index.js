@@ -24,4 +24,5 @@ module.exports = {
   refuseOrder: `${API_SERVER}/api/v1/orders/%s/audits/backwards`, // 驳回同意采购申请
   sbtK3: `${API_SERVER}/api/v1/orders/%s/submissions`, // 提交至金蝶系统
   getTeams:  `http://192.168.100.176:3001/api/v1/teams`, // 获取部门列表
+  getPros: `http://192.168.100.176:3002/api/v1/projects`, // 获取项目列表
 }

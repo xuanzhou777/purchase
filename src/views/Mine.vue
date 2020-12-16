@@ -12,9 +12,9 @@
 
       <!--标签页-->
       <a-tabs type="card" @change="changeCard" :activeKey="activeKey">
-        <a-tab-pane key="review" tab="待审核采购申请" class="todo-wrap">
+        <a-tab-pane key="review" tab="待审核采购申请" class="todo-wrap" v-if="!isChecker">
           <!--刷新按钮-->
-          <a-button type="primary" class="refresh-btn" @click="refresh" :loading="loading" :disabled = "disabled">
+          <a-button type="primary" class="refresh-btn" @click="refresh(0)" :loading="loading" :disabled = "disabled">
             刷新
           </a-button>
           <div class="has-data" v-if="reviewList.length > 0">
@@ -54,11 +54,111 @@
 
             </a-table>
             <!--分页-->
-            <a-pagination class="pagination" @change="changeReviewPage" v-model="reviewPage" :total="reviewTotal" show-less-items  :show-total="total => `共 ${total} 条数据`"/>
+            <a-pagination class="pagination" @change="changeReviewPage(0)" v-model="reviewPage" :total="reviewTotal" show-less-items  :show-total="total => `共 ${total} 条数据`"/>
           </div>
           <div class="no-data" v-else>
             <a-icon type="smile" />
             您暂无待审核申请
+          </div>
+          
+        </a-tab-pane>
+        <a-tab-pane key="checker" tab="待采购复核" class="todo-wrap" v-if="isChecker">
+          <!--刷新按钮-->
+          <a-button type="primary" class="refresh-btn" @click="refresh(1)" :loading="loading" :disabled = "disabled">
+            刷新
+          </a-button>
+          <div class="has-data" v-if="reviewList.length > 0">
+            <div class="hit">
+              <a-icon type="sound" />
+              您{{reviewTotal}}张单据未复核
+            </div>
+            <!--表格-->
+            <a-table bordered :columns="columns"  :data-source="reviewList" :pagination ="false" class="table" 
+            :loading = "reviewTableLoad"
+            :rowKey="(record,index) => record.id"
+            :customRow="tableClick"
+            >
+              <a-table v-if="record.categoryNum !=3"
+                class="table"
+                style="width: 3000px"
+                slot="expandedRowRender"
+                slot-scope="record"
+                :columns="maColumns"
+                :data-source="record.materials"
+                :rowKey="(record,index) => index" 
+                :pagination="false"
+              >
+              </a-table>
+
+              <a-table v-else
+                class="table"
+                style="width: 1920px"
+                slot="expandedRowRender"
+                slot-scope="record"
+                :columns="serviceColumns"
+                :data-source="record.services"
+                :rowKey="(record,index) => index" 
+                :pagination="false"
+              >
+              </a-table>
+
+            </a-table>
+            <!--分页-->
+            <a-pagination class="pagination" @change="changeReviewPage(1)" v-model="reviewPage" :total="reviewTotal" show-less-items  :show-total="total => `共 ${total} 条数据`"/>
+          </div>
+          <div class="no-data" v-else>
+            <a-icon type="smile" />
+            您暂无待复核申请
+          </div>
+          
+        </a-tab-pane>
+        <a-tab-pane key="sendk3" tab="待发送至金蝶" class="todo-wrap" v-if="isChecker">
+          <!--刷新按钮-->
+          <a-button type="primary" class="refresh-btn" @click="refresh(2)" :loading="loading" :disabled = "disabled">
+            刷新
+          </a-button>
+          <div class="has-data" v-if="reviewList.length > 0">
+            <div class="hit">
+              <a-icon type="sound" />
+              您{{reviewTotal}}张单据未发送至金蝶系统
+            </div>
+            <!--表格-->
+            <a-table bordered :columns="columns"  :data-source="reviewList" :pagination ="false" class="table" 
+            :loading = "reviewTableLoad"
+            :rowKey="(record,index) => record.id"
+            :customRow="tableClick"
+            >
+              <a-table v-if="record.categoryNum !=3"
+                class="table"
+                style="width: 3000px"
+                slot="expandedRowRender"
+                slot-scope="record"
+                :columns="maColumns"
+                :data-source="record.materials"
+                :rowKey="(record,index) => index" 
+                :pagination="false"
+              >
+              </a-table>
+
+              <a-table v-else
+                class="table"
+                style="width: 1920px"
+                slot="expandedRowRender"
+                slot-scope="record"
+                :columns="serviceColumns"
+                :data-source="record.services"
+                :rowKey="(record,index) => index" 
+                :pagination="false"
+              >
+              </a-table>
+
+            </a-table>
+            <!--分页-->
+            <a-pagination class="pagination" @change="changeReviewPage(2)" v-model="reviewPage" :total="reviewTotal" show-less-items  :show-total="total => `共 ${total} 条数据`"/>
+          </div>
+          <div class="no-data" v-else>
+            <a-icon type="smile" />
+            您暂无待发送至金蝶申请
           </div>
           
         </a-tab-pane>
@@ -486,7 +586,7 @@ export default {
     } else {
       this.user = JSON.parse(sessionStorage.getItem("userInfo"));
       this.judgeChecker();
-      this.getReviewList();
+     this.isChecker?  this.getReviewList(1) : this.getReviewList(0)
     }
   },
   methods: {
@@ -523,15 +623,15 @@ export default {
       }
       return str;
     },
-    getReviewList() { // 获取待审核列表
+    getReviewList(num) { // 获取待审核列表 0 待审核 1采购复核 2发送至金蝶订单
       this.reviewTableLoad = true;
-      // let url = `${Api.orderList}?page=${this.reviewPage}&limit=${this.GLOBAL.len}&auditedByUsername=${this.user.username}&status=2`;
-      // 判断是否有采购复核的权限，如有是则筛选未复核或者需要进入金蝶订单的数据
-      // 否则 筛选出需要审核的
+      this.reviewPage = 1;
       let url;
-      if (this.isChecker) {
-        url = `${Api.orderList}?page=${this.reviewPage}&limit=${this.GLOBAL.len}&state=1&state=3`;
-      } else {
+      if(num == 1) { // 采购复核
+        url = `${Api.orderList}?page=${this.reviewPage}&limit=${this.GLOBAL.len}&status=1`;
+      } else if (num == 2) { // 发送至金蝶
+        url = `${Api.orderList}?page=${this.reviewPage}&limit=${this.GLOBAL.len}&status=3`;
+      } else { // 待审核
         url = `${Api.orderList}?page=${this.reviewPage}&limit=${this.GLOBAL.len}&auditedByUsername=${this.user.username}&status=2`;
       }
       Http.AJAXGET(this, url, "get", (res)=>{
@@ -547,8 +647,12 @@ export default {
         return false;
       } else {
         this.activeKey = key;
-        if (key == "review" && this.reviewList.length == 0) { // 更新 待审核页面
-          this.getReviewList();
+        if (key == "review") { // 更新 待审核页面
+          this.getReviewList(0);
+        } else if(key == "checker") { // 更新待复核
+          this.getReviewList(1);
+        } else if (key == "sendk3") { // 更新发送至金蝶
+           this.getReviewList(2);
         } else if(key == "my" && this.myList.length == 0) { // 更新我的申请单页面
           this.handleMySearch();
         }
@@ -560,29 +664,31 @@ export default {
             dblclick: () => {
               // 跳转到详情页面
               this.$router.push({path: `/detail?id=${record.id}`})
-              
             }
         }
       }
     },
     judgeChecker() { // 判断是否有采购复核的权限
-      let perList = this.user.roles[0].perms; 
-      for(let item of perList){
-        if(item.name === "pa_order_review" ){
-          this.isChecker = true;
-          break;
+      if ( this.user.roles.length >0) {
+        let perList = this.user.roles[0].perms; 
+        for(let item of perList){
+          if(item.name === "pa_order_review" ){
+            this.isChecker = true;
+            this.activeKey = "checker" ;
+            break;
+          }
         }
       }
     },
     changeMyPage() {
-      this.getReviewList();
-    },
-    changeReviewPage() {
       this.handleMySearch();
     },
-    refresh() { // 页面刷新
+    changeReviewPage(num) {
+      this.getReviewList(num)
+    },
+    refresh(num) { // 页面刷新
       this.reviewPage = 1;
-      this.getReviewList();
+      this.getReviewList(num);
     }
     
   },

@@ -143,6 +143,7 @@
       :initData = maData
       :modfyIdx = modfyIdx
       :orderId = orderId
+      :projectList = projectList
       v-on:MaCallBack = "MaCallBack"
       ></add-form>
 
@@ -443,6 +444,7 @@ export default {
       }, // 部门信息
       showChangeTeam: false,
       selectTeamId: null,
+      projectList: [], //项目列表
      
       
     }
@@ -458,6 +460,7 @@ export default {
       }
       this.selectTeamId = this.user.teams[0].id;
       this.dateNow = this.getNowFormatDate();
+      this.getProjectList();
     }
   },
   methods: {
@@ -664,6 +667,19 @@ export default {
       Http.AJAXGET(this, url, "get", (res)=>{
         this.teamList = res.data;
       })
+    },
+    getProjectList(){ // 获取项目列表
+      let user = JSON.parse(sessionStorage.getItem("userInfo")).username;
+      let url = `${Api.getPros}?memberUsername=${user}`;
+      Http.AJAXGET(this, url, "get", (res)=>{
+        this.projectList = res.data;
+        let item = {
+          num: "公用",
+          name: "自定义项目名称"
+        }
+        this.projectList.unshift(item);
+      })
+
     },
 
 

@@ -58,14 +58,12 @@
 
 <style scoped>
 .fixed-top{
+  position: relative;
   box-sizing: border-box;
-  position: absolute;
-  left: 0;
-  top: 50px;
   width: 100%;
   height: 80px;
   border-bottom: 1px dashed #ccc;
-  padding: 16px;
+  background: #fff;
 }
 .fixed-top .tit{
   font-weight: bold;
@@ -77,11 +75,12 @@
 .fixed-top .sbt-btn{
   position: absolute;
   right: 16px;
-  top: 20px;
+  top: -10px;
 }
 .form-area{
   margin-top: 70px;
   width: 100%;
+  
 }
 .ant-advanced-search-form{
   display: flex;

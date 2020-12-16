@@ -183,6 +183,8 @@
       :initData = maData
       :modfyIdx = modfyIdx
       :orderId = id
+      :disableSbt = disableSbt
+      :projectList = projectList
       v-on:MaCallBack = "MaCallBack"
     ></add-form>
   
@@ -332,6 +334,16 @@ const columns = [
     width: 200,
   },
   {
+    title: '项目编号',
+    dataIndex: 'projectNum',
+    width: 100,
+  },
+  {
+    title: '项目名称',
+    dataIndex: 'projectName',
+    width: 200,
+  },
+  {
     title: '申请采购原因及用途',
     dataIndex: 'reason',
     width: 400,
@@ -357,6 +369,11 @@ const serviceColumns = [
     width: 300,
   },
  
+  {
+    title: '项目编号',
+    dataIndex: 'projectNum',
+    width: 100,
+  },
   {
     title: '项目名称',
     dataIndex: 'projectName',
@@ -436,6 +453,8 @@ export default {
       jdLoad: false,
       jdDisable: false,
       auditList: [], // 审核列表
+      disableSbt: false,
+      projectList: [], // 项目列表
     }
   },
   computed: {
@@ -473,6 +492,9 @@ export default {
         if(res.status == 2) {
           this.judgeReview();
         }
+        if(res.status > 1) {
+          this.disableSbt = true;
+        }
         if(res.audit) {
           this.renderAuditList(res.audit.auditSteps);
         }
@@ -481,6 +503,10 @@ export default {
         } else{
           this.data = res.materials;
         }
+        if (this.isChecker) {
+          this.getProjectList();
+        }
+        
         this.isLoad = true;
         
       })
@@ -587,7 +613,7 @@ export default {
         on: {
             dblclick: () => {
               console.log(record,index);
-              if((this.status ==1 || this.status==3) && this.isChecker) {
+              if(this.isChecker) {
                 this.maData = this.data[index];
                 this.modfyIdx = index;
                 setTimeout(()=>{
@@ -645,13 +671,16 @@ export default {
 
     },
     judgeChecker() { // 判断是否有采购复核的权限
-      let perList = this.user.roles[0].perms; 
-      for(let item of perList){
-        if(item.name === "pa_order_review" ){
-          this.isChecker = true;
-          break;
+      if(this.user.roles.length > 0) {
+        let perList = this.user.roles[0].perms; 
+        for(let item of perList){
+          if(item.name === "pa_order_review" ){
+            this.isChecker = true;
+            break;
+          }
         }
       }
+      
     },
     judgeReview() { // 判断是否有审核权限
       let current = this.orderData.audit.currentStep;
@@ -693,14 +722,14 @@ export default {
         list[i].reason = "";
         list[i].user = list[i].user.name;
         if (list[i].name == "新建") {
-          list[i].time = this.orderData.appliedTime.substring(0,10);
+          list[i].time = this.formatTime(this.orderData.appliedTime);
         } 
         else if (list[i].name == "采购复核") {
-          list[i].time = list[i].createdTime.substring(0,10);
+          list[i].time = this.formatTime(list[i].createdTime);
           list[i].result = "通过";
         } 
         if (list[i].logs.length > 0) {
-          list[i].time = list[i].logs[list[i].logs.length -1].createdTime.substring(0,10);
+          list[i].time = this.formatTime(list[i].logs[list[i].logs.length -1].createdTime);
           list[i].result = list[i].logs[list[i].logs.length -1].action === 7 ? "驳回" : "通过";
           list[i].reason = list[i].logs[list[i].logs.length -1].content;
         } 
@@ -709,7 +738,30 @@ export default {
       this.auditList = list;
       console.log(list)
     },
+    formatTime(str) { // 格式化时间
+      var date = new Date(str);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
+      var Y = date.getFullYear() + '-';
+      var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+      var D = date.getDate() < 10 ?  '0'+date.getDate()+ ' ' : date.getDate()+ ' ';
+      var h = date.getHours() < 10 ? '0'+date.getHours()+ ':' : date.getHours()+ ':';
+      var m = date.getMinutes() < 10 ? '0'+date.getMinutes()+ ':' : date.getMinutes()+ ':';
+      var s = date.getSeconds()< 10 ? '0'+date.getSeconds() : date.getSeconds();
+      return Y+M+D+h+m+s;
+    },
 
+    getProjectList(){ // 获取项目列表
+      let user = this.orderData.appliedByUsername;
+      let url = `${Api.getPros}?memberUsername=${user}`;
+      Http.AJAXGET(this, url, "get", (res)=>{
+        this.projectList = res.data;
+        let item = {
+          num: "公用",
+          name: "自定义项目名称"
+        }
+        this.projectList.unshift(item);
+      })
+
+    },
 
     
   },

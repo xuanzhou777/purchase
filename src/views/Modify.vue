@@ -144,6 +144,8 @@
       :initData = maData
       :modfyIdx = modfyIdx
       :orderId = orderId
+      :disableSbt = disableSbt
+      :projectList = projectList
       v-on:MaCallBack = "MaCallBack"
       ></add-form>
 
@@ -443,6 +445,8 @@ export default {
       }, // 部门信息
       showChangeTeam: false,
       selectTeamId: null,
+      disableSbt: false, // 是否禁用提交
+      projectList: [], // 项目列表
      
       
     }
@@ -475,6 +479,9 @@ export default {
           this.form1 = Object.assign( {}, this.form1, {
             remark:res.remark,
           })
+          if(res.status > 1) {
+            this.disableSbt = true;
+          }
           this.categoryName = res.categoryNum;
           this.dateNow = res.createdTime.substring(0, 10);
           this.team.id = res.reviewTeam.id;
@@ -485,6 +492,7 @@ export default {
           } else{
             this.material = res.materials;
           }
+          this.getProjectList();
         }
         
         
@@ -693,6 +701,19 @@ export default {
       Http.AJAXGET(this, url, "get", (res)=>{
         this.teamList = res.data;
       })
+    },
+    getProjectList(){ // 获取项目列表
+      let user = JSON.parse(sessionStorage.getItem("userInfo")).username;
+      let url = `${Api.getPros}?memberUsername=${user}`;
+      Http.AJAXGET(this, url, "get", (res)=>{
+        this.projectList = res.data;
+        let item = {
+          num: "公用",
+          name: "自定义项目名称"
+        }
+        this.projectList.unshift(item);
+      })
+
     },
 
 

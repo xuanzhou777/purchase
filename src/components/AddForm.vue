@@ -150,6 +150,30 @@
           </a-col>
 
         </a-row>
+        <a-row :gutter="24">
+          <a-col
+            :span="12"
+          >
+            <a-form-model-item  label="项目编号" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }" prop="projectNum">
+              <a-select v-model="form.projectNum"
+                @change = "changePro"
+                placeholder="请选择项目编号"
+              >
+                <a-select-option  v-for="item in projectList" :key="item.num" :value="item.num">{{item.num}}/{{item.name}}</a-select-option>
+        </a-select>
+            </a-form-model-item>
+          </a-col>
+          <a-col
+            :span="12"
+          >
+            <a-form-model-item  label="项目名称" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }"  prop="projectName">
+              <a-input :disabled = proNameDisable
+                v-model="form.projectName"
+              />
+            </a-form-model-item>
+          </a-col>
+
+        </a-row>
         <a-form-model-item label="需要到货时间" prop="expectArrivalDate">
           <a-date-picker  
             @change="changeArrivalDate"
@@ -164,6 +188,7 @@
             :auto-size="{ minRows: 3, maxRows: 5 }"
           />
         </a-form-model-item>
+
          <a-form-model-item label="申请采购原因及用途" class="custom-line" :label-col="{ span: 3 }" :wrapper-col="{ span: 18 }" prop="reason">
           <a-textarea
             v-model="form.reason"
@@ -172,9 +197,9 @@
           />
         </a-form-model-item>
         <!--到货状态和到货周期  采购填写-->
-         <a-row :gutter="24" >
+        <a-row :gutter="24" v-if="isChecker">
           <a-col
-            :span="12"
+            :span="8"
           >
             <a-form-item label="到货状态" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }" >
               <!-- <a-select v-model="form.isArrivedNum" :disabled = true>
@@ -186,13 +211,20 @@
             </a-form-item>
           </a-col>
           <a-col
-            :span="12"
+            :span="10"
           >
             <a-form-model-item  label="到货周期" prop="arrivalTat" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }">
               <a-input v-model="form.arrivalTat"
                 placeholder="请输入到货周期"
               />
             </a-form-model-item>
+          </a-col>
+          <a-col
+            :span="6"
+          >
+            <a-button type="primary"  @click="emailApper">
+              发送邮件给申请人
+            </a-button>
           </a-col>
 
         </a-row>
@@ -233,22 +265,31 @@
             <a-col
               :span="12"
             >
-              <a-form-model-item  label="项目名称" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }" prop="projectName">
-                <a-input
-                  v-model="serviceForm.projectName" 
-                />
+              <a-form-model-item  label="项目编号" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }" prop="projectNum">
+                <a-select v-model="serviceForm.projectNum"
+                  @change = "changePro"
+                  placeholder="请选择项目编号"
+                >
+                  <a-select-option  v-for="item in projectList" :key="item.num" :value="item.num">{{item.num}}/{{item.name}}</a-select-option>
+          </a-select>
               </a-form-model-item>
             </a-col>
             <a-col
               :span="12"
             >
-              <a-form-model-item  label="项目地址" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }"  prop="projectAddress">
-                <a-input 
-                  v-model="serviceForm.projectAddress" 
+              <a-form-model-item  label="项目名称" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }"  prop="projectName">
+                <a-input :disabled = proNameDisable
+                  v-model="serviceForm.projectName"
                 />
               </a-form-model-item>
             </a-col>
+
           </a-row>
+          <a-form-model-item  label="项目地址" :label-col="{ span: 3 }" :wrapper-col="{ span: 21 }"  prop="projectAddress">
+            <a-input 
+              v-model="serviceForm.projectAddress" 
+            />
+          </a-form-model-item>
           <a-row :gutter="24">
             <a-col
               :span="12"
@@ -306,12 +347,13 @@
         textAlign: 'right',
         zIndex: 1,
       }"
+      v-if="!disableSbt"
     >
       <a-button :style="{ marginRight: '8px' }" @click="onClose">
         取消
       </a-button>
       <a-button type="primary" @click="handleSubmit" :loading="loading" :disabled="disabled">
-        提交
+        保存
       </a-button>
     </div>
 
@@ -392,13 +434,19 @@ export default {
       type: Number,
       default: -1
     },
+    disableSbt: { // 是否禁用提交
+      type: Boolean,
+      default: false
+    },
+    projectList: { // 项目列表
+      type: Array,
+      default: ()=> []
+    },
   },
   data () {
     return {
       formTit: "新增物料",
-      userInfo: {
-        name: "",
-      },
+      isChecker: false,
       visible: false,
       form: { // 仪器/物料表单数据
         id: "",
@@ -418,12 +466,15 @@ export default {
         reason: "",
         isArrived: false,
         arrivalTat: "",
+        projectNum: "",
+        projectName: "",
       },
       serviceForm: { // 服务表单数据
         id: "",
         fee: 0,
         supplierNum: "",
         supplierName: "",
+        projectNum: "",
         projectName: "",
         projectAddress: "",
         dueDate: null,
@@ -433,17 +484,22 @@ export default {
       rules: { // 验证规则
         expectArrivalDate: [{ required: true, message: '请选择需要到货日期',  trigger: 'change' }],
         amount: [{ required: true,  message: '请输入数量', trigger: 'blur' }],
+        projectNum: [{ required: true, message: '请选择项目编号',  trigger: 'change' }],
+        projectName:  [{ required: true,  message: '请填写项目名称', trigger: 'blur' }],
+        reason: [{ required: true,  message: '请填写申请采购原因及用途', trigger: 'blur' }],
       },
       serviceRules: { // 服务验证规则
         supplierNum: [{ required: true,  message: '请选择供应商信息', trigger: 'blur' }],
         supplierName: [{ required: true,  message: '请选择供应商信息', trigger: 'blur' }],
-        projectName: [{ required: true,  message: '请填写项目名称', trigger: 'blur' }],
         projectAddress: [{ required: true,  message: '请填写项目地址', trigger: 'blur' }],
         dueDate: [{ required: true, message: '请选择计划完成日期',  trigger: 'change'  }],
         fee: [{ required: true,  message: '请填写预算金额', trigger: 'blur' }],
+        projectNum: [{ required: true, message: '请选择项目编号',  trigger: 'change' }],
+        projectName:  [{ required: true,  message: '请填写项目名称', trigger: 'blur' }],
       },
       loading: false, // 按钮loading属性
       disabled: false, // 按钮disabled属性
+      proNameDisable: false
       
     }
     
@@ -452,6 +508,7 @@ export default {
     // this.$refs.numInput.onblur = ()=>{
     //   this.calcuAmount();
     // }
+    this.judgeChecker();
   },
   computed: {
     // ...mapState({
@@ -524,7 +581,7 @@ export default {
               this.form.amount = parseInt(this.form.amount);
               this.form.price =  this.form.price ? parseInt(this.form.price) : null;
               Http.AJAXPOST(this, url, type, this.form, (res)=>{
-                this.$message.success("信息提交成功！");
+                this.$message.success("信息保存成功！");
                 this.form.id = res.id;
                 this.$emit("MaCallBack", this.form);
                 this.loading = false;
@@ -561,7 +618,7 @@ export default {
               }
               this.serviceForm.fee = parseInt( this.serviceForm.fee);
               Http.AJAXPOST(this, url, type, this.serviceForm, (res)=>{
-                this.$message.success("信息提交成功！");
+                this.$message.success("信息保存成功！");
                 this.form.id = res.id;
                 if(type == "post") {
                   this.$emit("MaCallBack", this.form);
@@ -628,7 +685,47 @@ export default {
         this.form.fee = 0;
       }
     },
-    resetForm() { // 重置表格
+    emailApper() { // 发送邮件给申请人 todo
+
+    },
+    judgeChecker() { // 判断是否有采购复核的权限
+      if (JSON.parse(sessionStorage.getItem("userInfo")).roles.length >0 ) {
+        let perList = JSON.parse(sessionStorage.getItem("userInfo")).roles[0].perms; 
+        for(let item of perList){
+          if(item.name === "pa_order_review" ){
+            this.isChecker = true;
+            break;
+          }
+        }
+      }
+      
+    },
+    
+    changePro(e) { // 切换项目编号
+      
+      let obj = this.projectList.find(v => v.num === e);
+      console.log(obj)
+      if (this.cate == 3) {
+        this.serviceForm.projectName = obj.name;
+        console.log(this.serviceForm)
+      } else {
+        this.form.projectName = obj.name;
+      }
+      if(e== "公用") { 
+        this.proNameDisable = false;
+      } else {
+        this.proNameDisable = true;
+      }
+    },
+    resetForm() { // 重置表单
+      // this.props.seForm.clearValidate();
+      //  this.$refs['maForm'].resetFields()
+      // this.$refs.form.resetFields()
+      // this.$nextTick(()=>{
+
+      //   this.$refs['seForm'].resetFields()
+
+      // })
       this.form = {
         id: "",
         k3MaterialNum: "",
@@ -647,6 +744,8 @@ export default {
         reason: "",
         isArrived: false,
         arrivalTat: "",
+        projectNum: "",
+        projectName: "",
       };
       this.serviceForm = {
         id: "",
@@ -654,6 +753,7 @@ export default {
         supplierNum: "",
         supplierName: "",
         projectName: "",
+        projectNum: "",
         projectAddress: "",
         dueDate: null,
         specification: "",
