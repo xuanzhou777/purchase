@@ -119,7 +119,7 @@
         
         <a-table v-if="record.categoryNum !=3"
           class="table"
-          style="width: 3000px"
+          style="width: 3300px"
           slot="expandedRowRender"
           slot-scope="record"
           :columns="maColumns"
@@ -252,6 +252,16 @@ const maColumns = [
     width: 200,
   },
   {
+    title: '项目编号',
+    dataIndex: 'projectNum',
+    width: 100,
+  },
+  {
+    title: '项目名称',
+    dataIndex: 'projectName',
+    width: 200,
+  },
+  {
     title: '申请采购原因及用途',
     dataIndex: 'reason',
     width: 400,
@@ -267,6 +277,7 @@ const maColumns = [
     title: '是否到货',
     dataIndex: 'isArrived',
     width: 100,
+    customRender: isArrived => isArrived? '是' : '否'
   },
   {
     title: '到货周期',
@@ -275,7 +286,7 @@ const maColumns = [
   },
   {
     title: '金蝶采购订单号',
-    dataIndex: 'note9',
+    dataIndex: 'k3poNum',
   },
 
 ];
@@ -290,6 +301,11 @@ const serviceColumns = [
     title: '供应商名称',
     dataIndex: 'supplierName',
     width: 300,
+  },
+  {
+    title: '项目编号',
+    dataIndex: 'projectNum',
+    width: 100,
   },
  
   {

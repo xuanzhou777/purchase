@@ -2,7 +2,7 @@
 <template>
   <a-drawer
     title="选择物料"
-    :width="800"
+    :width="900"
     :visible="visible"
     :maskClosable = "false"
     @close="onClose"
@@ -37,6 +37,12 @@
           <a-input
             v-decorator="['name']"
             placeholder="请输入名称"
+          />
+        </a-form-item>
+        <a-form-item label="货号">
+          <a-input
+            v-decorator="['itemNum']"
+            placeholder="请输入货号"
           />
         </a-form-item>
         <a-button icon="search" type="primary" class="sbt-btn" @click="handleSearch">

@@ -309,6 +309,16 @@ const columns = [
     width: 200,
   },
   {
+    title: '项目编号',
+    dataIndex: 'projectNum',
+    width: 100,
+  },
+  {
+    title: '项目名称',
+    dataIndex: 'projectName',
+    width: 200,
+  },
+  {
     title: '申请采购原因及用途',
     dataIndex: 'reason',
     width: 400,
@@ -346,6 +356,11 @@ const serviceColumns = [
     title: '供应商名称',
     dataIndex: 'supplierName',
     width: 300,
+  },
+  {
+    title: '项目编号',
+    dataIndex: 'projectNum',
+    width: 100,
   },
  
   {

@@ -10,6 +10,9 @@
         新建采购申请
       </a-button>
 
+      <!--被驳回的提示-->
+      <div class="refuse-hit" v-if="refuseNum > 0"><a-icon type="alert" /> 近三个月内，您有{{refuseNum}}条申请单被驳回，详见《我发起的采购申请》查询！</div>
+
       <!--标签页-->
       <a-tabs type="card" @change="changeCard" :activeKey="activeKey">
         <a-tab-pane key="review" tab="待审核采购申请" class="todo-wrap" v-if="!isChecker">
@@ -30,7 +33,7 @@
             >
               <a-table v-if="record.categoryNum !=3"
                 class="table"
-                style="width: 3000px"
+                style="width: "
                 slot="expandedRowRender"
                 slot-scope="record"
                 :columns="maColumns"
@@ -54,7 +57,7 @@
 
             </a-table>
             <!--分页-->
-            <a-pagination class="pagination" @change="changeReviewPage(0)" v-model="reviewPage" :total="reviewTotal" show-less-items  :show-total="total => `共 ${total} 条数据`"/>
+            <!-- <a-pagination class="pagination" @change="changeReviewPage(0)" v-model="reviewPage" :total="reviewTotal" show-less-items  :show-total="total => `共 ${total} 条数据`"/> -->
           </div>
           <div class="no-data" v-else>
             <a-icon type="smile" />
@@ -80,7 +83,7 @@
             >
               <a-table v-if="record.categoryNum !=3"
                 class="table"
-                style="width: 3000px"
+                style="width: 3300px"
                 slot="expandedRowRender"
                 slot-scope="record"
                 :columns="maColumns"
@@ -130,7 +133,7 @@
             >
               <a-table v-if="record.categoryNum !=3"
                 class="table"
-                style="width: 3000px"
+                style="width: 3300px"
                 slot="expandedRowRender"
                 slot-scope="record"
                 :columns="maColumns"
@@ -257,7 +260,7 @@
           >
             <a-table v-if="record.categoryNum !=3"
               class="table"
-              style="width: 3000px"
+              style="width: 3300px"
               slot="expandedRowRender"
               slot-scope="record"
               :columns="maColumns"
@@ -346,6 +349,10 @@
 .main-box /deep/ .ant-tabs {
   overflow: inherit;
 }
+.refuse-hit{
+  margin-bottom: 10px;
+  color: #f77c2a;
+}
 </style>
 
 <script>
@@ -418,6 +425,16 @@ const maColumns = [
     width: 200,
   },
   {
+    title: '项目编号',
+    dataIndex: 'projectNum',
+    width: 100,
+  },
+  {
+    title: '项目名称',
+    dataIndex: 'projectName',
+    width: 200,
+  },
+  {
     title: '申请采购原因及用途',
     dataIndex: 'reason',
     width: 400,
@@ -433,6 +450,7 @@ const maColumns = [
     title: '是否到货',
     dataIndex: 'isArrived',
     width: 100,
+    customRender: isArrived => isArrived? '是' : '否'
   },
   {
     title: '到货周期',
@@ -441,7 +459,7 @@ const maColumns = [
   },
   {
     title: '金蝶采购订单号',
-    dataIndex: 'note9',
+    dataIndex: 'k3poNum',
   },
 
 ];
@@ -457,7 +475,11 @@ const serviceColumns = [
     dataIndex: 'supplierName',
     width: 300,
   },
- 
+  {
+    title: '项目编号',
+    dataIndex: 'projectNum',
+    width: 100,
+  },
   {
     title: '项目名称',
     dataIndex: 'projectName',
@@ -572,6 +594,7 @@ export default {
       user: {}, // 用户信息
       maColumns,
       serviceColumns,
+      refuseNum: 0, // 被驳回的申请单数量
     }
   },
   computed: {
@@ -586,7 +609,8 @@ export default {
     } else {
       this.user = JSON.parse(sessionStorage.getItem("userInfo"));
       this.judgeChecker();
-     this.isChecker?  this.getReviewList(1) : this.getReviewList(0)
+      this.isChecker?  this.getReviewList(1) : this.getReviewList(0);
+      this.renderRefuseOrder();
     }
   },
   methods: {
@@ -630,9 +654,9 @@ export default {
       if(num == 1) { // 采购复核
         url = `${Api.orderList}?page=${this.reviewPage}&limit=${this.GLOBAL.len}&status=1`;
       } else if (num == 2) { // 发送至金蝶
-        url = `${Api.orderList}?page=${this.reviewPage}&limit=${this.GLOBAL.len}&status=3`;
+        url = `${Api.orderList}?page=${this.reviewPage}&limit=${this.GLOBAL.len}&status=8`;
       } else { // 待审核
-        url = `${Api.orderList}?page=${this.reviewPage}&limit=${this.GLOBAL.len}&auditedByUsername=${this.user.username}&status=2`;
+        url = `${Api.orderList}?currentAuditedByUsername=${this.user.username}`;
       }
       Http.AJAXGET(this, url, "get", (res)=>{
         this.reviewTotal= res.total;
@@ -689,8 +713,41 @@ export default {
     refresh(num) { // 页面刷新
       this.reviewPage = 1;
       this.getReviewList(num);
-    }
-    
+    },
+    renderRefuseOrder() { // 渲染近三个月内被驳回的订单数量
+      // let obj = this.getLast3Month();
+      // console.log(obj)
+    },
+    getLast3Month() {
+      // var now = new Date();
+      // var year = now.getFullYear();
+      // var month = now.getMonth() + 1;//0-11表示1-12月
+      // var day = now.getDate();
+      // var dateObj = {};
+      // dateObj.now = new Date().toISOString();
+      //   var nowMonthDay = new Date(year, month, 0).getDate();    //当前月的总天数
+      // if(month - 3 <= 0){ //如果是1、2、3月，年数往前推一年
+      //     var last3MonthDay = new Date((year - 1), (12 - (3 - parseInt(month))), 0).getDate();    //3个月前所在月的总天数
+      //     if(last3MonthDay < day){    //3个月前所在月的总天数小于现在的天日期
+      //         dateObj.last = (year - 1) + '-' + (12 - (3 - month)) + '-' + last3MonthDay;
+      //     }else{
+      //         dateObj.last = (year - 1) + '-' + (12 - (3 - month)) + '-' + day;
+      //     }
+      // }else{
+      //     var last3MonthDay = new Date(year, (parseInt(month) - 3), 0).getDate();    //3个月前所在月的总天数
+      //     if(last3MonthDay < day){    //3个月前所在月的总天数小于现在的天日期
+      //         if(day < nowMonthDay){        //当前天日期小于当前月总天数,2月份比较特殊的月份
+      //             dateObj.last = year + '-' + (month - 3) + '-' + (last3MonthDay - (nowMonthDay - day));
+      //         }else{
+      //             dateObj.last = year + '-' + (month - 3) + '-' + last3MonthDay;
+      //         }
+      //     }else{
+      //         dateObj.last = year + '-' + (month - 3) + '-' + day;
+      //     }
+      // }
+      
+      // return dateObj;
+    },
   },
 }
 </script>

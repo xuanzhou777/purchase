@@ -30,7 +30,7 @@ export default new Vuex.Store({
       },
       {
         value: 0,
-        text: "创建或驳回"
+        text: "创建"
       },
       {
         value: 1,
@@ -38,16 +38,44 @@ export default new Vuex.Store({
       },
       {
         value: 2,
-        text: "审批中"
+        text: "财务审批"
       },
       {
         value: 3,
-        text: "审批完成"
+        text: "一级部门审批"
       },
       {
         value: 4,
-        text: "已生成采购订单"
-      }
+        text: "二级部门审批"
+      },
+      {
+        value: 5,
+        text: "三级部门审批"
+      },
+      {
+        value: 6,
+        text: "CEO审批"
+      },
+      {
+        value: 7,
+        text: "董事会审批"
+      },
+      {
+        value: 8,
+        text: "提交至金蝶"
+      },
+      {
+        value: 9,
+        text: "完成"
+      },
+      {
+        value: 10,
+        text: "驳回"
+      },
+      {
+        value: 11,
+        text: "作废"
+      },
 
     ],
     

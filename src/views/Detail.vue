@@ -8,7 +8,7 @@
     <div class="main-box" v-else>
       <p class="back-link"> <router-link :to="backurl"><a-icon type="double-left" /> 返回</router-link></p>
       <!--审核模块-->
-      <div class="review-box form" v-if="(status==1 && isChecker) || (status==2 && isReviewer)">
+      <div class="review-box form" v-if="(status==1 && isChecker) || (status>1 && status<8 && isReviewer)">
         <div class="main-cnt">
           <a-form-model :model="review" :label-col="{ span: 4 }" :wrapper-col="{ span: 14}">
             <a-form-model-item label="审核结果">
@@ -77,7 +77,7 @@
        
       </div>
       <!--生成金蝶采购订单-->
-      <a-button type="primary" class="jindieBtn" icon="check-circle"  :loading="jdLoad" :disabled="jdDisable" @click="jindieFun" v-if="status==3 && isChecker">
+      <a-button type="primary" class="jindieBtn" icon="check-circle"  :loading="jdLoad" :disabled="jdDisable" @click="jindieFun" v-if="status==8 && isChecker">
         生成金蝶采购订单
       </a-button>
 
@@ -110,22 +110,22 @@
               
           </a-card>
           
-          <a-card title="审核进度条" class="time-line" v-if="status >= 2">
+          <a-card title="审核进度条" class="time-line" v-if="status >= 2 && status <10">
             <a-timeline>
               <a-timeline-item v-for="(item, i) in orderData.audit.auditSteps" :key="i" :color="orderData.audit.currentStep >item.step? 'green' : 'gray'" >
                 <a-icon slot="dot" type="check-circle-o" style="font-size: 16px;" v-if="orderData.audit.currentStep > item.step" />
                 <a-icon slot="dot" type="double-right-o" style="font-size: 16px; color: orange" v-if="orderData.audit.currentStep == item.step" />
-                <div>{{item.time}} {{item.username}} {{item.user}} {{item.name}} {{item.result}} </div>
+                <div>{{item.time}} {{item.username}} {{item.userName}} {{item.name}} {{item.result}} </div>
                 <div v-if="item.reason!= ''">理由：{{item.reason}}</div>
               </a-timeline-item>
             </a-timeline>
           </a-card>
 
           <!--被驳回的情况-->
-          <a-card title="申请单日志" class="time-line" v-if="status == 0 && orderData.audit">
+          <a-card title="申请单日志" class="time-line" v-if="status == 10 || status == 11">
             <a-timeline>
-              <a-timeline-item v-for="(item, i) in orderData.audit.auditSteps" :key="i"  >
-                <div>{{item.time}} {{item.username}} {{item.user}} {{item.name}} {{item.result}} </div>
+              <a-timeline-item v-for="(item, i) in auditList" :key="i"  >
+                <div>{{item.time}} {{item.username}} {{item.userName}} {{item.name}} {{item.result}} </div>
                 <div v-if="item.reason!= ''">理由：{{item.reason}}</div>
               </a-timeline-item>
             </a-timeline>
@@ -353,7 +353,12 @@ const columns = [
     dataIndex: 'expectArrivalDate',
     width: 100,
     scopedSlots: { customRender: 'date' },
-  }
+  },
+  {
+    title: '金蝶采购订单号',
+    dataIndex: 'k3poNum',
+    width: 200,
+  },
 ];
 
 const serviceColumns = [
@@ -489,15 +494,18 @@ export default {
         this.orderData = res;
         this.cate = res.categoryNum;
         this.status = res.status;
-        if(res.status == 2) {
-          this.judgeReview();
-        }
+       
         if(res.status > 1) {
           this.disableSbt = true;
         }
-        if(res.audit) {
+        if(res.audit) { // 有审核流的情况
+          console.log('sss')
           this.renderAuditList(res.audit.auditSteps);
+        } else if(this.status == 10 && !res.audit) { // 没审核流，被采购驳回的
+          console.log('sss111')
+          this.renderLogs(res.logs);
         }
+        
         if (res.categoryNum ==3) {
           this.data = res.services;
         } else{
@@ -506,62 +514,51 @@ export default {
         if (this.isChecker) {
           this.getProjectList();
         }
+        if(res.status > 1 && res.status < 8) {
+          this.judgeReview();
+        }
         
         this.isLoad = true;
         
       })
     },
     onReviewSubmit() { // 提交审核信息
-      if (this.status == 1) { // 采购复核阶段
-        console.log(this.review)
-        let data = {};
-        if (this.review.res === 1) { // 复核成功
-          data = {
-            status: 2,
-            remark: this.review.reason
-          }
-        } else { // 复核失败
-          data = {
-            status: 0,
-            remark: this.review.reason
-          }
-        }
-        let url = Api.changeApplyStatus.replace(/%s/, this.id)
-        this.sbtLoad = true;
-        this.sbtDisable = true;
-        Http.AJAXPOST(this, url, "patch", data, (res)=>{
-          // 提交成功 返回个人中心
-          this.$message.success("申请单复核成功！");
-          setTimeout(()=>{
-            this.$router.push({path: "/mine"})
-          }, 1500)
-        }, ()=>{
-          this.sbtLoad = false;
-          this.sbtDisable = false;
-        })
-      } else {
-        let url;
-        if (this.review.res === 1) { // 审核通过
-          url = Api.agreeOrder.replace(/%s/, this.id)
-        } else { // 审核不通过
-          url = Api.refuseOrder.replace(/%s/, this.id)
-        }
-        this.sbtLoad = true;
-        this.sbtDisable = true;
-        let data = {
+      
+      // 审核
+      let nextStatus; // 下一步审核的状态
+      if (this.status == 1 ) { // 财务审核之前
+        nextStatus = 2;
+       
+      } else { // 获取下一步审核状态
+        nextStatus = this.getNextStatus();
+      }
+      console.log(nextStatus)
+      let data = {};
+      if (this.review.res === 1) { // 成功
+        data = {
+          status: nextStatus,
           remark: this.review.reason
         }
-        Http.AJAXPOST(this, url, "patch", data, (res)=>{
-          // 提交成功 返回个人中心
-          this.$message.success("申请单审核成功！");
-          setTimeout(()=>{
-            this.$router.push({path: "/mine"})
-          }, 1500)
-        }, ()=>{
-          this.sbtLoad = false;
-          this.sbtDisable = false;
-        })
+      } else { // 失败
+        data = {
+          status: 10,
+          remark: this.review.reason
+        }
       }
+      
+      let url = Api.changeApplyStatus.replace(/%s/, this.id)
+      this.sbtLoad = true;
+      this.sbtDisable = true;
+      Http.AJAXPOST(this, url, "patch", data, (res)=>{
+        // 提交成功 返回个人中心
+        this.$message.success("申请单审核成功！");
+        setTimeout(()=>{
+          this.$router.push({path: "/mine"})
+        }, 1500)
+      }, ()=>{
+        this.sbtLoad = false;
+        this.sbtDisable = false;
+      })
 
     },
     genTreeNode(parentId, isLeaf = false) {
@@ -597,16 +594,21 @@ export default {
     jindieFun() { // 生成金蝶采购订单
       this.jdDisable = true;
       this.jdLoad = true;
-      let url = Api.sbtK3.replace(/%s/, this.id);
-      Http.AJAXGET(this, url, "get", (res)=>{
-        this.$message.success(res.message);
+      let data = {
+        status: 9,
+        remark: ""
+      }
+      let url = Api.changeApplyStatus.replace(/%s/, this.id);
+      Http.AJAXPOST(this, url, "patch", data, (res)=>{
+        // 提交成功 返回个人中心
+        this.$message.success("物料信息已发送至金蝶系统！");
         setTimeout(()=>{
           this.$router.push({path: "/mine"})
         }, 1500)
-      },()=>{
+      }, ()=>{
         this.jdDisable = false;
         this.jdLoad = false;
-      }) 
+      })
     },
     tableClick(record, index){ // 表格双击事件
       return {
@@ -720,13 +722,9 @@ export default {
         list[i].time = "";
         list[i].result = "";
         list[i].reason = "";
-        list[i].user = list[i].user.name;
+        list[i].userName = list[i].user? list[i].user.name : "";
         if (list[i].name == "新建") {
           list[i].time = this.formatTime(this.orderData.appliedTime);
-        } 
-        else if (list[i].name == "采购复核") {
-          list[i].time = this.formatTime(list[i].createdTime);
-          list[i].result = "通过";
         } 
         if (list[i].logs.length > 0) {
           list[i].time = this.formatTime(list[i].logs[list[i].logs.length -1].createdTime);
@@ -762,8 +760,44 @@ export default {
       })
 
     },
-
-    
+    getNextStatus() { // 获取下一个状态
+      let current = this.orderData.audit.currentStep;
+      console.log(this.auditList)
+      if (this.auditList[current].status == 8) {
+        return 8
+      } else if (this.auditList[current].status == 9) {
+        return 9
+      } else {
+        while (!this.auditList[current].username ) {
+          current ++ ;
+          if(this.auditList[current].status == 8 || this.auditList[current].status == 9) {
+            break;
+          }
+        }
+        return this.auditList[current].status;
+      }
+      
+    },
+    renderLogs(list) { // 被采购驳回的情况
+      let obj = [];
+      obj[0] = {
+        name: "新建",
+        reason: "",
+        result: "",
+        username: list[0].createdByUsername,
+        userName: this.orderData.appliedBy.name,
+        time: this.formatTime(list[0].createdTime)
+      };
+      obj[1] = {
+        name: "采购复核",
+        reason: list[1].content,
+        result: "驳回",
+        username: list[1].createdByUsername,
+        userName: "",
+        time: this.formatTime(list[0].createdTime)
+      };
+      this.auditList = obj;
+    },
   },
 }
 </script>

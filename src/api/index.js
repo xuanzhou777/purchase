@@ -20,8 +20,8 @@ module.exports = {
   createService: `${API_SERVER}/api/v1/services`, // 创建服务
   modifyService: `${API_SERVER}/api/v1/services/%s`, // 修改服务
   deleteService: `${API_SERVER}/api/v1/services/%s`, // 删除服务
-  agreeOrder:  `${API_SERVER}/api/v1/orders/%s/audits/forwards`, // 审核同意采购申请
-  refuseOrder: `${API_SERVER}/api/v1/orders/%s/audits/backwards`, // 驳回同意采购申请
+  // agreeOrder:  `${API_SERVER}/api/v1/orders/%s/audits/forwards`, // 审核同意采购申请
+  // refuseOrder: `${API_SERVER}/api/v1/orders/%s/audits/backwards`, // 驳回同意采购申请
   sbtK3: `${API_SERVER}/api/v1/orders/%s/submissions`, // 提交至金蝶系统
   getTeams:  `http://192.168.100.176:3001/api/v1/teams`, // 获取部门列表
   getPros: `http://192.168.100.176:3002/api/v1/projects`, // 获取项目列表

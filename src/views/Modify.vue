@@ -310,6 +310,16 @@ const columns = [
     width: 200,
   },
   {
+    title: '项目编号',
+    dataIndex: 'projectNum',
+    width: 100,
+  },
+  {
+    title: '项目名称',
+    dataIndex: 'projectName',
+    width: 200,
+  },
+  {
     title: '申请采购原因及用途',
     dataIndex: 'reason',
     width: 400,
@@ -347,6 +357,11 @@ const serviceColumns = [
     title: '供应商名称',
     dataIndex: 'supplierName',
     width: 300,
+  },
+  {
+    title: '项目编号',
+    dataIndex: 'projectNum',
+    width: 100,
   },
  
   {
@@ -447,6 +462,7 @@ export default {
       selectTeamId: null,
       disableSbt: false, // 是否禁用提交
       projectList: [], // 项目列表
+      previousRejectedOrderId: -1,
      
       
     }
@@ -459,6 +475,7 @@ export default {
       // this.dateNow = this.getNowFormatDate();
       if(this.$route.query.id) {
         this.orderId = parseInt(this.$route.query.id);
+        this.previousRejectedOrderId = parseInt(this.$route.query.id);
         this.renderPage();
       } else {
         this.$message.error("参数错误!");
@@ -493,6 +510,7 @@ export default {
             this.material = res.materials;
           }
           this.getProjectList();
+          this.orderId = -1; // 赋值后，重置orderId
         }
         
         
@@ -591,6 +609,7 @@ export default {
       data.categoryNum = this.categoryName;
       data.appliedByUsername = this.user.username;
       data.reviewTeamId = this.team.id;
+      data.previousRejectedOrderId = this.previousRejectedOrderId;
       if(this.material.length == 0) {
         this.$message.error("物料或服务信息不能为空,请添加后保存!");
         return false;
