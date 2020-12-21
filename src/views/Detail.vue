@@ -65,7 +65,7 @@
       </div> -->
       
       <!--未提交申请前 可修改删除-->
-      <div class="fun-box" v-if="status==0 && (user.username == orderData.appliedByUsername)">
+      <div class="fun-box" v-if="(status==0 || status==10)&& (user.username == orderData.appliedByUsername)">
         <a-button type="primary" icon="form" @click="modifyApply">
           修改
         </a-button>

@@ -486,19 +486,13 @@ export default {
     renderPage() {
       let url = Api.orderDetail.replace(/%s/, this.orderId);
       Http.AJAXGET(this, url, "GET", (res)=>{
-        if ((res.status!== 0) || res.appliedByUsername!== this.user.username) {
-          this.$message.error("该申请单不可修改，1s后返回个人中心!");
-          setTimeout(()=>{
-            this.$router.push({path: "/mine"})
-          }, 1500)
-
-        } else {
+        if ((res.status== 0 || res.status== 10) && res.appliedByUsername== this.user.username) {
           this.form1 = Object.assign( {}, this.form1, {
             remark:res.remark,
           })
-          if(res.status > 1) {
-            this.disableSbt = true;
-          }
+          // if(res.status > 1) {
+          //   this.disableSbt = true;
+          // }
           this.categoryName = res.categoryNum;
           this.dateNow = res.createdTime.substring(0, 10);
           this.team.id = res.reviewTeam.id;
@@ -511,6 +505,12 @@ export default {
           }
           this.getProjectList();
           this.orderId = -1; // 赋值后，重置orderId
+
+        } else {
+         this.$message.error("该申请单不可修改，1s后返回个人中心!");
+          setTimeout(()=>{
+            this.$router.push({path: "/mine"})
+          }, 1500)
         }
         
         
@@ -609,7 +609,7 @@ export default {
       data.categoryNum = this.categoryName;
       data.appliedByUsername = this.user.username;
       data.reviewTeamId = this.team.id;
-      data.previousRejectedOrderId = this.previousRejectedOrderId;
+      data.previousRejectedOrderId = this.previousRejectedOrderId.toString();
       if(this.material.length == 0) {
         this.$message.error("物料或服务信息不能为空,请添加后保存!");
         return false;
